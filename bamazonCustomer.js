@@ -13,7 +13,7 @@ var connection = mysql.createConnection({
 connection.connect(function(error) {
     if (error) throw error;
     displayProducts();
-    purchaseInfo();
+    
 });
 
 function displayProducts() {
@@ -34,12 +34,31 @@ function displayProducts() {
             // console.log("In Stock: " + res[i].stock_quantity);
             // console.log("============================")
         };
+
+        purchaseInfo();
         
     })
 }
 
 function purchaseInfo() {
-    inquirer.prompt([item_identification_prompt, item_quantity_prompt]).then(function(answer) {
+    inquirer.prompt([
+    {
+        type: "number",
+        name: "type",
+        message: "Which item would you like to buy? Input Item ID below",
+        validate: function( value ) {
+            var valid = !isNaN(parseInt(value));
+            return valid || "Please enter a whole number.";
+        }
+    },{
+        type: "number",
+        name: "quantity",
+        message: "Please indicate quantity:",
+        validate: function( value ) {
+            var valid = !isNaN(parseInt(value));
+            return valid || "Please enter a whole number.";
+        }
+    }]).then(function(answer) {
         console.log("Item selected: " + answer.type);
         console.log("Quantity indicated: " + answer.quantity);
 
@@ -54,25 +73,30 @@ function purchaseInfo() {
             // console.log(quantity);
             console.log("============================")
             if (availableStock >= quantity) {
-                console.log("That quantity is available! :-)")
+                console.log("That quantity is available! :-)");
+
+                console.log("============================")
+                // console.log(availableStock - quantity);
+                connection.query("UPDATE products SET stock_quantity = " + (availableStock - quantity) + " WHERE item_id = " + type, function(error, res) {
+                    if (error) throw error;
+                    console.log("============================")
+                    console.log("INVOICE")
+                    var subtotal = products[0].price * quantity;
+                    var tax = subtotal * 0.06;
+                    console.log("Your Subtotal is: $" + subtotal);
+                    console.log("Sales Tax: $" + tax);
+                    console.log("Your Total is: $" + (subtotal + tax));
+                    console.log("Thank you for your purchase! See you next time! :-)");
+                    console.log("============================")
+                    displayProducts();
+                    connection.end;
+                });
             } else {
-                console.log("Sorry, insufficient quantity! :-(")
+                console.log("Sorry, insufficient quantity! :-(");
+                connection.end;
             };
-            console.log("============================")
-            // console.log(availableStock - quantity);
-            connection.query("UPDATE products SET stock_quantity = " + (availableStock - quantity) + " WHERE item_id = " + type, function(error, res) {
-                if (error) throw error;
-                console.log("============================")
-                console.log("INVOICE")
-                var subtotal = products[0].price * quantity;
-                var tax = subtotal * 0.06;
-                console.log("Your Subtotal is: $" + subtotal);
-                console.log("Sales Tax: $" + tax);
-                console.log("Your Total is: $" + (subtotal + tax));
-                console.log("Thank you for your purchase! See you next time! :-)");
-                console.log("============================")
-                displayProducts();
-            });
+            
+            
         })
         connection.end;
 
@@ -81,23 +105,23 @@ function purchaseInfo() {
     })
 }
 
-var item_identification_prompt = {
-        type: "number",
-        name: "type",
-        message: "Which item would you like to buy? Input Item ID below",
-        validate: validation
-    };
+// var item_identification_prompt = {
+//         type: "number",
+//         name: "type",
+//         message: "Which item would you like to buy? Input Item ID below",
+//         validate: validation
+//     };
 
-var item_quantity_prompt = {
-        type: "number",
-        name: "quantity",
-        message: "Please indicate quantity:",
-        validate: validation
-    };
+// var item_quantity_prompt = {
+//         type: "number",
+//         name: "quantity",
+//         message: "Please indicate quantity:",
+//         validate: validation
+//     };
 
-var validation = {
-    function( value ) {
-        var valid = !isNaN(parseInt(value));
-        return valid || "Please enter a whole number.";
-    }
-};
+// var validation = {
+//     function( value ) {
+//         var valid = !isNaN(parseInt(value));
+//         return valid || "Please enter a whole number.";
+//     }
+// };
